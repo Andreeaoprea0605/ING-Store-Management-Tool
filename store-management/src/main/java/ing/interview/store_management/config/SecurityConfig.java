@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,11 +28,17 @@ public class SecurityConfig {
      */
     @Bean
     public UserDetailsService userDetailsService() {
-        InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-        // Create an admin user with role "ADMIN" and one with "USER" with a password stored as plain text
-        manager.createUser(User.withUsername("admin").password("{noop}admin123").roles("ADMIN").build());
-        manager.createUser(User.withUsername("user").password("{noop}user123").roles("USER").build());
-        return manager;
+        // Create users with roles (e.g. USER and ADMIN roles)
+        var user1 = User.withUsername("user")
+                .password(passwordEncoder().encode("password"))
+                .roles("USER")
+                .build();
+        var admin = User.withUsername("admin")
+                .password(passwordEncoder().encode("admin"))
+                .roles("ADMIN")
+                .build();
+
+        return new InMemoryUserDetailsManager(user1, admin);
     }
 
     /**
@@ -55,4 +63,15 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+    /**
+     * Configures the password encoder to hash passwords using BCrypt.
+     *
+     * @return PasswordEncoder object (BCryptPasswordEncoder)
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
 }
