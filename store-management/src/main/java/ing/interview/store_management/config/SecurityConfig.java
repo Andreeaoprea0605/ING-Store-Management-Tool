@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .roles("USER")
                 .build();
         var admin = User.withUsername("admin")
-                .password(passwordEncoder().encode("admin"))
+                .password(passwordEncoder().encode("admin123"))
                 .roles("ADMIN")
                 .build();
 
