@@ -10,6 +10,9 @@ import lombok.Data;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * The Permission Do
+ */
 @Entity
 @Data
 public class Permission {

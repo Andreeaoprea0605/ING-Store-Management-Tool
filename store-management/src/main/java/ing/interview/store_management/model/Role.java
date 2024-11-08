@@ -13,6 +13,9 @@ import lombok.Data;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * The Role Do
+ */
 @Entity
 @Data
 public class Role {
