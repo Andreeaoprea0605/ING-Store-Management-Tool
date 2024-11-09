@@ -1,8 +1,10 @@
 package ing.interview.store_management.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -10,56 +12,44 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
 /**
- * The SecurityConfig used to define the user details service for authentication.
- * Observation: I have chosen to use an in-memory user manager based on the scope of this application
+ * The SecurityConfig class used to configure the Spring Security setup for the store management app
+ * It ensures that the application is secure, and only authorized users with the correct roles can access certain endpoints.
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    /**
-     * Defines the UserDetailsService for authentication.
-     *
-     * @return An InMemoryUserDetailsManager to manage in-memory users.
-     */
-    @Bean
-    public UserDetailsService userDetailsService() {
-        // Create users with roles (e.g. USER and ADMIN roles)
-        var user1 = User.withUsername("user")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-                .build();
-        var admin = User.withUsername("admin")
-                .password(passwordEncoder().encode("admin123"))
-                .roles("ADMIN")
-                .build();
-
-        return new InMemoryUserDetailsManager(user1, admin);
-    }
+    @Autowired
+    private JwtRequestFilter jwtRequestFilter;
 
     /**
-     * Configures security rules for the application, including authorization based on user roles and enabling authentication.
+     * Configures HTTP security to set up authentication and authorization rules for the app
      *
-     * @param http HttpSecurity object used to configure security settings for the application
-     * @return SecurityFilterChain object that defines the security filters
-     * @throws Exception if an error occurs while configuring security
+     * @param http The HttpSecurity object used to configure security settings for HTTP requests
+     * @return SecurityFilterChain that defines the security filters and behavior
+     * @throws Exception If an error occurs while configuring security
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Configure authorization rules for HTTP requests based on URL patterns
+        // Define security settings for HTTP requests
         http
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
+                                .requestMatchers("/authenticate").permitAll()
                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                                .requestMatchers("/**").permitAll()
+                                .anyRequest().authenticated()
                 )
-                .formLogin(withDefaults())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(withDefaults());
+
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -74,4 +64,25 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Creates an in-memory user details service with two sample users: one admin and one user
+     *
+     * @return An InMemoryUserDetailsManager that holds user details for authentication
+     * User "admin" has the "ADMIN" role, and user "user" has the "USER" role
+     */
+    @Bean
+    public UserDetailsService userDetailsService() {
+        // Creating an in-memory user manager and defining two users with different roles.
+        var user1 = User.withUsername("user")
+                .password(passwordEncoder().encode("password"))
+                .roles("USER")
+                .build();
+        var admin = User.withUsername("admin")
+                .password(passwordEncoder().encode("admin123"))
+                .roles("ADMIN")
+                .build();
+
+        // Return the in-memory user details manager
+        return new InMemoryUserDetailsManager(user1, admin);
+    }
 }
