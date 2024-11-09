@@ -36,7 +36,9 @@ public class JwtUtil {
      */
     public String generateToken(Authentication authentication) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", authentication.getAuthorities());
+        claims.put("roles", authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
 
         String token = Jwts.builder()
                 .setClaims(claims)

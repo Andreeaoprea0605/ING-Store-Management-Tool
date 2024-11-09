@@ -1,14 +1,9 @@
 package ing.interview.store_management.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +13,9 @@ import java.util.Set;
  */
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "store_role")
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +23,7 @@ public class Role {
 
     private String name;
 
-    @ManyToMany(mappedBy = "roles")
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)
     private Set<User> users = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -36,6 +34,8 @@ public class Role {
     )
     private Set<Permission> permissions = new HashSet<>();
 
-    // Getters and Setters
+    public Role(String name) {
+        this.name = name;
+    }
 }
 

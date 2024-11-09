@@ -41,10 +41,7 @@ public class AuthenticationController {
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword());
 
             authenticationManager.authenticate(authenticationToken);
-
-            // Generate the token if authentication succeeds
             String jwt = jwtUtil.generateToken(authenticationToken);
-
             return ResponseEntity.ok(new AuthenticationResponse(jwt));
 
         } catch (BadCredentialsException e) {

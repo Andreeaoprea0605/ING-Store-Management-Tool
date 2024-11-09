@@ -40,8 +40,8 @@ public class JwtRequestFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Skip the /authenticate endpoint as it is not protected by JWT
-        if (httpRequest.getRequestURI().equals("/authenticate")) {
+        // Skip the /authenticate endpoint as it is not protected by JWT and /api/public should not be restricted at all
+        if (httpRequest.getRequestURI().equals("/authenticate") || httpRequest.getRequestURI().startsWith("/api/public")) {
             // Continue with the filter chain without applying JWT validation
             chain.doFilter(request, response);
             return;
