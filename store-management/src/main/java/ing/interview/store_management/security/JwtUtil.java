@@ -4,10 +4,17 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * The JwtUtil class to handle the generation, parsing and validation of JWT tokens
@@ -23,16 +30,34 @@ public class JwtUtil {
     /**
      * Generates a JWT token with a configurable expiration time
      *
-     * @param username The username to include in the token
+     * @param authentication The authentication object containing the user details
      * @return The generated JWT token
      */
-    public String generateToken(String username) {
+    public String generateToken(Authentication authentication) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", authentication.getAuthorities());
+
         return Jwts.builder()
-                .setSubject(username)
+                .setClaims(claims)
+                .setSubject(authentication.getName())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationMillis)) // Custom expiration
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
                 .signWith(SECRET_KEY)
                 .compact();
+    }
+
+    /**
+     * Extract roles from the token
+     *
+     * @param token The JWT token
+     * @return Roles extracted from the token
+     */
+    public List<GrantedAuthority> getAuthorities(String token) {
+        Claims claims = getClaims(token);
+        List<String> roles = (List<String>) claims.get("roles");
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .collect(Collectors.toList());
     }
 
     /**

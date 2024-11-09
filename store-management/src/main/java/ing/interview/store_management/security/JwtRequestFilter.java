@@ -8,6 +8,8 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -37,41 +40,40 @@ public class JwtRequestFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Extract the token from the Authorization header
         String token = httpRequest.getHeader("Authorization");
-        String username = null;
+        String username;
 
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
 
             try {
-                // Extract username
+                // Extract username and validate the token
                 username = jwtUtil.extractUsername(token);
-
-                // Validate the token
                 if (jwtUtil.isTokenValid(token, username)) {
-                    SecurityContextHolder.getContext().setAuthentication(
-                            new UsernamePasswordAuthenticationToken(username, null, null)
-                    );
+                    // Extract user roles (if applicable) and set authentication
+                    List<GrantedAuthority> authorities = jwtUtil.getAuthorities(token);
+                    Authentication authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 } else {
-                    // 401 Unauthorized - token is invalid or expired, stop processing the request
+                    // Token is invalid or expired
                     httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     httpResponse.getWriter().write("Invalid or expired token");
                     return;
                 }
             } catch (Exception e) {
+                // Catch parsing or any other exceptions
                 httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 httpResponse.getWriter().write("Invalid token format");
                 return;
             }
         } else {
-            // Token is missing or invalid format
+            // Token is missing or incorrectly formatted
             httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             httpResponse.getWriter().write("Authorization header missing or incorrect format");
             return;
         }
 
-        // Continue the filter chain if the token is valid and there are no errors
+        // Continue the filter chain if the token is valid
         chain.doFilter(request, response);
     }
 
