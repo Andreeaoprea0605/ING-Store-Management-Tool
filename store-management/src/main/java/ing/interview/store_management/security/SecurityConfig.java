@@ -39,9 +39,7 @@ public class SecurityConfig {
      */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder =
-                http.getSharedObject(AuthenticationManagerBuilder.class);
-        return authenticationManagerBuilder.build();
+        return http.getSharedObject(AuthenticationManagerBuilder.class).build();
     }
 
     /**
@@ -54,18 +52,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // Define security settings for HTTP requests
+//        http
+//                .authorizeHttpRequests(authorizeRequests ->
+//                        authorizeRequests
+//                                .requestMatchers("/authenticate").permitAll()
+//                                .requestMatchers("/admin/**").hasRole("ADMIN")
+//                                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+//                                .anyRequest().authenticated()
+//                )
+//                .sessionManagement(session -> session
+//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .httpBasic(withDefaults());
+//
+//        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+//
+//        return http.build();
         http
+                .csrf().disable()  // Disable CSRF protection for stateless JWT authentication
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers("/authenticate").permitAll()
-                                .requestMatchers("/admin/**").hasRole("ADMIN")
-                                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                                .anyRequest().authenticated()
+                                .requestMatchers("/authenticate").permitAll()  // Permit all access to the authentication endpoint
+                                .anyRequest().authenticated()  // All other requests require authentication
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(withDefaults());
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // Stateless session policy as we're using JWT
+                );
 
+        // Add custom JWT filter before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

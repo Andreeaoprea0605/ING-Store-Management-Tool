@@ -40,6 +40,13 @@ public class JwtRequestFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
+        // Skip the /authenticate endpoint as it is not protected by JWT
+        if (httpRequest.getRequestURI().equals("/authenticate")) {
+            // Continue with the filter chain without applying JWT validation
+            chain.doFilter(request, response);
+            return;
+        }
+
         String token = httpRequest.getHeader("Authorization");
         String username;
 
