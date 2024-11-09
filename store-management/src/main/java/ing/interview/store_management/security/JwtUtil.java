@@ -5,16 +5,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -31,24 +28,20 @@ public class JwtUtil {
     /**
      * Generates a JWT token with a configurable expiration time
      *
-     * @param authentication The authentication object containing the user details
+     * @param userDetails The user details
      * @return The generated JWT token
      */
-    public String generateToken(Authentication authentication) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList()));
+    public String generateToken(UserDetails userDetails) {
 
-        String token = Jwts.builder()
-                .setClaims(claims)
-                .setSubject(authentication.getName())
+        return Jwts.builder()
+                .claim("roles", userDetails.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toList()))
+                .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
                 .signWith(SECRET_KEY)
                 .compact();
-
-        return token;
     }
 
     /**
@@ -61,7 +54,7 @@ public class JwtUtil {
         Claims claims = getClaims(token);
         List<String> roles = (List<String>) claims.get("roles");
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
 

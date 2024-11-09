@@ -1,7 +1,9 @@
 package ing.interview.store_management.service;
 
+import ing.interview.store_management.model.Permission;
 import ing.interview.store_management.model.Role;
 import ing.interview.store_management.model.User;
+import ing.interview.store_management.repository.PermissionRepository;
 import ing.interview.store_management.repository.RoleRepository;
 import ing.interview.store_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 /**
  *      This class initialize and save users with roles in an H2 in-memory
@@ -28,6 +32,9 @@ public class DataInitializer implements CommandLineRunner{
     private RoleRepository roleRepository;
 
     @Autowired
+    private PermissionRepository permissionRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -37,37 +44,42 @@ public class DataInitializer implements CommandLineRunner{
 
     @Transactional
     public void createUserWithRoles() {
+        // Create permissions
+        Permission readPermission = permissionRepository.findByName("READ")
+                .orElseGet(() -> permissionRepository.save(new Permission("READ")));
+
+        Permission writePermission = permissionRepository.findByName("WRITE")
+                .orElseGet(() -> permissionRepository.save(new Permission("WRITE")));
+
         // Ensure roles are persisted or fetched
         Role adminRole = roleRepository.findByName("ADMIN")
                 .orElseGet(() -> {
                     Role role = new Role("ADMIN");
-                    return roleRepository.save(role);  // Save the new "ADMIN" role
+                    role.setPermissions(Set.of(readPermission, writePermission));
+                    return roleRepository.save(role);
                 });
 
         Role userRole = roleRepository.findByName("USER")
                 .orElseGet(() -> {
                     Role role = new Role("USER");
-                    return roleRepository.save(role);  // Save the new "USER" role
+                    role.setPermissions(Set.of(readPermission));
+                    return roleRepository.save(role);
                 });
 
         // Create or find the user "admin"
         userRepository.findByUsername("admin")
                 .orElseGet(() -> {
                     User user = new User("admin", passwordEncoder.encode("admin123"));
-                    user.getRoles().add(adminRole);  // Add the admin role to the user
-                    return userRepository.save(user);  // Save the user (roles will be persisted)
+                    user.setRole(adminRole);
+                    return userRepository.save(user);
                 });
 
         // Create or find the user "user"
         userRepository.findByUsername("user")
                 .orElseGet(() -> {
                     User user = new User("user", passwordEncoder.encode("password"));
-                    user.getRoles().add(userRole);  // Add the user role to the user
-                    return userRepository.save(user);  // Save the user (roles will be persisted)
+                    user.setRole(userRole);
+                    return userRepository.save(user);
                 });
-
-        // Print the created users and roles for verification
-        System.out.println("Andreea: " + userRepository.findAll());
-        System.out.println("Andreea: " + roleRepository.findAll());
     }
 }
