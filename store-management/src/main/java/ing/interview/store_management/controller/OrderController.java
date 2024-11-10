@@ -2,19 +2,15 @@ package ing.interview.store_management.controller;
 
 import ing.interview.store_management.dto.OrderDto;
 import ing.interview.store_management.dto.OrderProductDto;
-import ing.interview.store_management.exception.InsufficientProductQuantityException;
+import ing.interview.store_management.exception.InsufficientStockException;
 import ing.interview.store_management.exception.NoValidProductInOrderException;
+import ing.interview.store_management.exception.OrderNotFoundException;
+import ing.interview.store_management.exception.ProductNotFoundException;
 import ing.interview.store_management.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
@@ -42,7 +38,7 @@ public class OrderController {
         try {
             OrderDto orderDto = orderService.createOrder(orderProductDTOs);
             return ResponseEntity.status(HttpStatus.CREATED).body(orderDto);
-        } catch (NoValidProductInOrderException | InsufficientProductQuantityException ex) {
+        } catch (NoValidProductInOrderException | InsufficientStockException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
@@ -79,5 +75,26 @@ public class OrderController {
     @GetMapping
     public List<OrderDto> listAllOrders() {
         return orderService.listAllOrders();
+    }
+
+    /**
+     * Update orders in the system.
+     *
+     * @return the updated order dto.
+     */
+    @PutMapping("/{orderId}")
+    public ResponseEntity<?> updateOrder(@PathVariable Long orderId,
+                                         @RequestBody Set<OrderProductDto> updatedOrderProductDtos) {
+        try {
+            OrderDto updatedOrder = orderService.updateOrder(orderId, updatedOrderProductDtos);
+            return ResponseEntity.ok(updatedOrder);
+        } catch (ProductNotFoundException | InsufficientStockException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (OrderNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred: " + e.getMessage());
+        }
     }
 }

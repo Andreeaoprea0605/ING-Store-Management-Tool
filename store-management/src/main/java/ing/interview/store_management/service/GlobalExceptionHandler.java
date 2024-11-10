@@ -1,6 +1,6 @@
 package ing.interview.store_management.service;
 
-import ing.interview.store_management.exception.InsufficientProductQuantityException;
+import ing.interview.store_management.exception.InsufficientStockException;
 import ing.interview.store_management.exception.NoValidProductInOrderException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +15,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
-    @ExceptionHandler(InsufficientProductQuantityException.class)
-    public ResponseEntity<String> handleInsufficientProductQuantityException(InsufficientProductQuantityException ex) {
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<String> handleInsufficientProductQuantityException(InsufficientStockException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
