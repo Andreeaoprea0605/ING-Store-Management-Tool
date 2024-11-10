@@ -56,12 +56,12 @@ public class OrderService {
      * @param orderProductDTOs A set of {@link OrderProductDto} objects containing the product details and quantities
      * @return The created order as a {@link OrderDto}
      * @throws NoValidProductInOrderException If no valid products are found to add to the order
-     * @throws InsufficientStockException If the requested quantity is more than the available stock
+     * @throws InsufficientStockException     If the requested quantity is more than the available stock
      */
     @Transactional
     public OrderDto createOrder(Set<OrderProductDto> orderProductDTOs) throws NoValidProductInOrderException, InsufficientStockException {
-        // Validate and create the order, and calculate total price
-        BigDecimal totalPrice = validateAndCreateOrder(orderProductDTOs);
+        // Validate order info received, and calculate total price
+        BigDecimal totalPrice = validateOrderProductsDtoAndCalculateTotalPriceOfOrder(orderProductDTOs);
 
         // Create the order entity
         Order order = createOrderEntity(totalPrice);
@@ -117,9 +117,9 @@ public class OrderService {
      * @param orderProductDTOs the list of products in the order
      * @return the total price of the order
      * @throws NoValidProductInOrderException if no valid products were found for the order
-     * @throws InsufficientStockException if the quantity requested exceeds available stock
+     * @throws InsufficientStockException     if the quantity requested exceeds available stock
      */
-    private BigDecimal validateAndCreateOrder(Set<OrderProductDto> orderProductDTOs) throws NoValidProductInOrderException, InsufficientStockException {
+    private BigDecimal validateOrderProductsDtoAndCalculateTotalPriceOfOrder(Set<OrderProductDto> orderProductDTOs) throws NoValidProductInOrderException, InsufficientStockException {
         int validProductCount = 0;
         BigDecimal totalPrice = BigDecimal.ZERO;
 
@@ -164,7 +164,7 @@ public class OrderService {
      * Saves the order and the associated products.
      *
      * @param orderProductDTOs the list of products in the order
-     * @param order the order entity to save
+     * @param order            the order entity to save
      */
     private void saveOrderAndProducts(Set<OrderProductDto> orderProductDTOs, Order order) {
         for (OrderProductDto orderProductDto : orderProductDTOs) {
@@ -188,7 +188,7 @@ public class OrderService {
     /**
      * Updates the stock for a product by deducting the quantity ordered.
      *
-     * @param product the product to update
+     * @param product  the product to update
      * @param quantity the quantity to deduct from the stock
      */
     private void updateProductStock(Product product, int quantity) {
@@ -232,7 +232,7 @@ public class OrderService {
     /**
      * Method to handle order update, adjusting the stock as necessary.
      *
-     * @param orderId the order ID to update
+     * @param orderId          the order ID to update
      * @param orderProductDTOs the new list of products and quantities
      * @return the updated order DTO
      * @throws InsufficientStockException if the requested quantity exceeds the stock
@@ -262,8 +262,10 @@ public class OrderService {
      */
     private Map<Long, Integer> getOldProductQuantities(Order order) {
         Map<Long, Integer> oldProductQuantities = new HashMap<>();
-        for (OrderProduct orderProduct : order.getOrderProducts()) {
-            oldProductQuantities.put(orderProduct.getProduct().getId(), orderProduct.getQuantity());
+        if (order.getOrderProducts() != null) {
+            for (OrderProduct orderProduct : order.getOrderProducts()) {
+                oldProductQuantities.put(orderProduct.getProduct().getId(), orderProduct.getQuantity());
+            }
         }
         return oldProductQuantities;
     }
@@ -271,7 +273,7 @@ public class OrderService {
     /**
      * Validates and updates the order, adjusting product stock accordingly.
      *
-     * @param orderProductDTOs the updated list of products in the order
+     * @param orderProductDTOs     the updated list of products in the order
      * @param oldProductQuantities the old quantities of products in the order
      * @return the new total price for the updated order
      * @throws InsufficientStockException if the requested quantity exceeds the available stock
@@ -303,8 +305,8 @@ public class OrderService {
      * Updates the order products with the new quantities.
      *
      * @param orderProductDTOs the updated list of products in the order
-     * @param order the order entity to update
-     * @param totalPrice the new total price for the updated order
+     * @param order            the order entity to update
+     * @param totalPrice       the new total price for the updated order
      */
     private void updateOrderProducts(Set<OrderProductDto> orderProductDTOs, Order order, BigDecimal totalPrice) {
         Set<OrderProduct> updatedOrderProducts = new HashSet<>();
